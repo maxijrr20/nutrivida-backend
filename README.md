@@ -52,4 +52,4 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 * **Framework:** Spring Boot 3.x (Spring Web, Spring Data JPA, Spring Security)
 * **Gestor de dependencias:** Maven / Gradle
 * **Base de Datos:** PostgreSQL (AWS RDS - Subred Privada, Puerto 5432 aislado)
-* **Servicios AWS:** EC2 / AWS Lambda
+* **Servicios AWS:** EC2 
