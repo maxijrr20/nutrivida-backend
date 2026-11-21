@@ -72,7 +72,8 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 | Ver un usuario | `GET /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
 | Modificar usuario | `PUT /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
 | Eliminar (desactivar) usuario | `DELETE /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
-| Alta de usuarios con rol y cambio de rol por el ADMIN | — | Pendiente (semana 15) | ✔ | — | — |
+| Crear usuario con rol (ADMIN) | `POST /api/v1/usuarios` | **En avance** | ✔ | ✔ | Pendiente |
+| Cambiar rol (ADMIN) | `PATCH /api/v1/usuarios/{id}/rol` | **En avance** | ✔ | ✔ | Pendiente |
 | Catálogo de servicios (CRUD) | — | Pendiente (semana 16) | ✔ | — | — |
 | Citas con regla de horario ocupado (409) | — | Pendiente (semana 16) | ✔ | — | — |
 | Integración con el frontend React | — | Pendiente | — | — | — |
@@ -115,9 +116,11 @@ Todas las rutas usan el prefijo versionado `/api/v1`. El detalle (cuerpos, ejemp
 | `POST /api/v1/auth/register` | Público | `rut`, `nombre`, `email`, `telefono` (opcional), `password` | `201` usuario creado con rol `PACIENTE` | `400` datos inválidos · `409` correo o RUT ya registrados | `RegistroPage` |
 | `POST /api/v1/auth/login` | Público | `email`, `password` | `200` `accessToken`, `tokenType: "Bearer"`, `expiresIn`, `usuario` | `400` campos vacíos · `401` "Correo o contraseña incorrectos." | `LoginPage` |
 | `GET /api/v1/auth/me` | Con token | — | `200` datos del dueño del token | `401` | Navbar / sesión |
+| `POST /api/v1/usuarios` | ADMIN | `rut`, `nombre`, `email`, `telefono` (opcional), `password`, `rol` | `201` usuario creado con el rol elegido | `400` · `401` · `403` · `409` correo o RUT ya registrados | `AdminUsuarios` |
 | `GET /api/v1/usuarios` | ADMIN | — | `200` lista | `401` · `403` | `AdminDashboardPage` |
 | `GET /api/v1/usuarios/{id}` | ADMIN o el mismo usuario | `id` | `200` | `401` · `403` cuenta ajena · `404` | Perfil / administración |
 | `PUT /api/v1/usuarios/{id}` | ADMIN o el mismo usuario | `nombre`, `email`, `telefono`, `password` (opcional) | `200` | `400` · `401` · `403` · `404` · `409` correo de otra cuenta | Perfil / administración |
+| `PATCH /api/v1/usuarios/{id}/rol` | ADMIN | `rol`: `ADMIN`, `NUTRICIONISTA` o `PACIENTE` | `200` usuario con el rol nuevo | `400` rol inválido · `401` · `403` · `404` · `409` el admin intenta quitarse su propio rol | `AdminUsuarios` |
 | `DELETE /api/v1/usuarios/{id}` | ADMIN | `id` | `204` (desactivación lógica) | `401` · `403` · `404` · `409` el admin intenta desactivarse | `AdminDashboardPage` |
 
 **Ejemplo de login (datos ficticios)**
@@ -173,7 +176,7 @@ Para probar una ruta protegida: ejecutar `POST /api/v1/auth/login`, copiar el `a
 | Token en el frontend | Pendiente de implementar en React. Se evaluará `sessionStorage` o `localStorage` para mantener la sesión al recargar (IE3.3.2), con su riesgo ante XSS. |
 | CORS | Solo `http://localhost:5173` y `https://maxijrr20.github.io` (`CORS_ORIGENES`). CORS no reemplaza la autorización. |
 
-**Roles y permisos (usuarios):** el registro público siempre asigna `PACIENTE`. Listar y desactivar son solo para `ADMIN` (`@PreAuthorize`, 403 para otros roles). Ver y modificar una cuenta lo pueden hacer el `ADMIN` o el mismo usuario: el id se compara con el `sub` del token, así que cambiar el id en la URL responde 403. El primer administrador se crea al iniciar con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
+**Roles y permisos (usuarios):** el registro público siempre asigna `PACIENTE`; solo el `ADMIN` puede crear usuarios con otro rol (`POST /usuarios`) o cambiar el rol de una cuenta (`PATCH /usuarios/{id}/rol`). Listar y desactivar son solo para `ADMIN` (`@PreAuthorize`, 403 para otros roles). Ver y modificar una cuenta lo pueden hacer el `ADMIN` o el mismo usuario: el id se compara con el `sub` del token, así que cambiar el id en la URL responde 403. El primer administrador se crea al iniciar con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
 
 ### Diagrama de secuencia: login y ruta protegida
 
@@ -228,6 +231,10 @@ sequenceDiagram
 | 8 | `GET /usuarios` con token de PACIENTE | 403 | |
 | 9 | PACIENTE consulta `GET /usuarios/{id}` de otra persona | 403 | |
 | 10 | Reiniciar el backend y volver a iniciar sesión | Los usuarios siguen en la base de datos | |
+| 11 | ADMIN cambia el rol de un paciente a `NUTRICIONISTA` | 200 y el rol queda guardado | |
+| 12 | PACIENTE intenta `PATCH /usuarios/{id}/rol` | 403 | |
+| 13 | ADMIN intenta quitarse su propio rol | 409 | |
+| 14 | Frontend: registro e inicio de sesión llaman a la API (carga, éxito y error) | Mensajes visibles en pantalla | |
 
 ---
 
