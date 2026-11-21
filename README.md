@@ -60,7 +60,7 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 
 ---
 
-## ✅ Estado del trabajo (avance lunes 16 de noviembre)
+## ✅ Estado del trabajo (avance domingo 22 de noviembre)
 
 | Operación | Ruta | Estado | Diseñado | Implementado | Probado (Swagger/Postman) |
 | :--- | :--- | :--- | :---: | :---: | :---: |
@@ -68,15 +68,15 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 | Registro (crear usuario) | `POST /api/v1/auth/register` | **Listo** | ✔ | ✔ | ✔ |
 | Inicio de sesión con JWT | `POST /api/v1/auth/login` | **Listo** | ✔ | ✔ | ✔ |
 | Usuario actual | `GET /api/v1/auth/me` | **Listo** | ✔ | ✔ | ✔ |
-| Listar usuarios | `GET /api/v1/usuarios` | **En avance** | ✔ | ✔ | Pendiente |
-| Ver un usuario | `GET /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
-| Modificar usuario | `PUT /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
-| Eliminar (desactivar) usuario | `DELETE /api/v1/usuarios/{id}` | **En avance** | ✔ | ✔ | Pendiente |
-| Crear usuario con rol (ADMIN) | `POST /api/v1/usuarios` | **En avance** | ✔ | ✔ | Pendiente |
-| Cambiar rol (ADMIN) | `PATCH /api/v1/usuarios/{id}/rol` | **En avance** | ✔ | ✔ | Pendiente |
+| Listar usuarios | `GET /api/v1/usuarios` | **Listo** | ✔ | ✔ | ✔ |
+| Ver un usuario | `GET /api/v1/usuarios/{id}` | **Listo** | ✔ | ✔ | ✔ |
+| Modificar usuario | `PUT /api/v1/usuarios/{id}` | **Listo** | ✔ | ✔ | ✔ |
+| Eliminar (desactivar) usuario | `DELETE /api/v1/usuarios/{id}` | **Listo** | ✔ | ✔ | ✔ |
+| Crear usuario con rol (ADMIN) | `POST /api/v1/usuarios` | **Listo** | ✔ | ✔ | ✔ |
+| Cambiar rol (ADMIN) | `PATCH /api/v1/usuarios/{id}/rol` | **Listo** | ✔ | ✔ | ✔ |
 | Catálogo de servicios (CRUD) | — | Pendiente (semana 16) | ✔ | — | — |
 | Citas con regla de horario ocupado (409) | — | Pendiente (semana 16) | ✔ | — | — |
-| Integración con el frontend React | — | Pendiente | — | — | — |
+| Integración con el frontend React (registro e inicio de sesión) | `/api/v1/auth/*` | **Listo** | ✔ | ✔ | ✔ |
 
 > **Listo:** se probó en Swagger o Postman y el resultado quedó guardado en la base de datos. **En avance:** la ruta y su lógica están implementadas y con commits, pero falta registrar sus pruebas.
 
@@ -221,20 +221,25 @@ sequenceDiagram
 
 | # | Caso | Resultado esperado | Resultado obtenido |
 | :--- | :--- | :--- | :--- |
-| 1 | Registro con datos válidos | 201, rol `PACIENTE`, fila nueva en `usuario` con hash BCrypt | |
-| 2 | Registro con correo o RUT repetido | 409, sin usuario duplicado | |
-| 3 | Registro con RUT inválido o contraseña corta | 400 con el error por campo | |
-| 4 | Registro enviando `"rol": "ADMIN"` | 201 con rol `PACIENTE` (el servidor ignora el rol) | |
-| 5 | Login correcto | 200 con `accessToken`, `tokenType` y `expiresIn` | |
-| 6 | Login con clave incorrecta o correo inexistente | 401 con el mismo mensaje genérico | |
-| 7 | `GET /auth/me` sin token / con token alterado | 401 | |
-| 8 | `GET /usuarios` con token de PACIENTE | 403 | |
-| 9 | PACIENTE consulta `GET /usuarios/{id}` de otra persona | 403 | |
-| 10 | Reiniciar el backend y volver a iniciar sesión | Los usuarios siguen en la base de datos | |
-| 11 | ADMIN cambia el rol de un paciente a `NUTRICIONISTA` | 200 y el rol queda guardado | |
-| 12 | PACIENTE intenta `PATCH /usuarios/{id}/rol` | 403 | |
-| 13 | ADMIN intenta quitarse su propio rol | 409 | |
-| 14 | Frontend: registro e inicio de sesión llaman a la API (carga, éxito y error) | Mensajes visibles en pantalla | |
+| 1 | Registro con datos válidos | 201, rol `PACIENTE`, fila nueva en `usuario` con hash BCrypt |  201, rol `PACIENTE` ✔ |
+| 2 | Registro con correo o RUT repetido | 409, sin usuario duplicado |  409 por correo y 409 por RUT ✔ |
+| 3 | Registro con RUT inválido o contraseña corta | 400 con el error por campo |  400 con errores por campo ✔ |
+| 4 | Registro enviando `"rol": "ADMIN"` | 201 con rol `PACIENTE` (el servidor ignora el rol) |  201 con rol `PACIENTE` ✔ |
+| 5 | Login correcto | 200 con `accessToken`, `tokenType` y `expiresIn` |  200, `expiresIn` 3600 ✔ |
+| 6 | Login con clave incorrecta o correo inexistente | 401 con el mismo mensaje genérico |  401 con el mismo mensaje en ambos casos ✔ |
+| 7 | `GET /auth/me` sin token / con token alterado | 401 |  401 sin token y 401 con token alterado ✔ |
+| 8 | `GET /usuarios` con token de PACIENTE | 403 |  403 (con token de ADMIN: 200 con la lista) ✔ |
+| 9 | PACIENTE consulta `GET /usuarios/{id}` de otra persona | 403 |  403 al ver y 403 al modificar otra cuenta; 200 al modificar la propia ✔ |
+| 10 | Reiniciar el backend y volver a iniciar sesión | Los usuarios siguen en la base de datos | Tras reiniciar, el ADMIN no se vuelve a crear (ya existe) y los usuarios de prueba siguen en PostgreSQL ✔ |
+| 11 | ADMIN cambia el rol de un paciente a `NUTRICIONISTA` | 200 y el rol queda guardado |  200, rol `NUTRICIONISTA` ✔ |
+| 12 | PACIENTE intenta `PATCH /usuarios/{id}/rol` | 403 |  403 ✔ |
+| 13 | ADMIN intenta quitarse su propio rol | 409 |  409 ✔ |
+| 14 | Frontend: registro e inicio de sesión llaman a la API (carga, éxito y error) | Mensajes visibles en pantalla | Registro exitoso, "Correo o contraseña incorrectos." con clave mala, login de PACIENTE y de ADMIN (redirige a `/admin`), sesión con token tras recargar y se borra al cerrar sesión ✔ |
+| 15 | ADMIN crea un usuario `NUTRICIONISTA` (`POST /usuarios`) | 201 con el rol elegido | 201 ✔ |
+| 16 | ADMIN desactiva un usuario | 204 | 204 ✔ |
+| 17 | Usuario desactivado intenta iniciar sesión | 401 | 401 ✔ |
+
+> Pruebas 1 a 13 y 15 a 17 ejecutadas el 21/11/2026 con `pruebas/probar-api.ps1` contra PostgreSQL local (detalle en `pruebas/resultados.md`). La 10 se comprobó reiniciando el backend y la 14 desde el navegador con React (`npm run dev`).
 
 ---
 
