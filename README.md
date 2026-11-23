@@ -146,7 +146,7 @@ Campos que **genera el servidor**: `id`, `rol` (en el registro siempre `PACIENTE
 ## 📘 Swagger UI (documentación viva)
 
 * Local: `http://localhost:8080/swagger-ui.html`
-* EC2: `http://34.224.151.181:8080/swagger-ui.html\``
+* EC2: `http://34.224.151.181:8080/swagger-ui.html`
 * Especificación OpenAPI en JSON: `/v3/api-docs`
 
 Para probar una ruta protegida: ejecutar `POST /api/v1/auth/login`, copiar el `accessToken`, presionar **Authorize** y pegarlo (sin escribir "Bearer").
