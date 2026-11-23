@@ -57,6 +57,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                // Catálogo público: las páginas del sitio lo muestran sin iniciar sesión (solo lectura)
+                .requestMatchers(HttpMethod.GET, "/api/v1/servicios/**", "/api/v1/categorias/**",
+                        "/api/v1/nutricionistas/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated())
             // Valida el header "Authorization: Bearer <token>" en cada solicitud protegida
