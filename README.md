@@ -60,7 +60,7 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 
 ---
 
-## ✅ Estado del trabajo (avance domingo 22 de noviembre)
+## ✅ Estado del trabajo (avance lunes 23 de noviembre)
 
 | Operación | Ruta | Estado | Diseñado | Implementado | Probado (Swagger/Postman) |
 | :--- | :--- | :--- | :---: | :---: | :---: |
@@ -74,9 +74,16 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 | Eliminar (desactivar) usuario | `DELETE /api/v1/usuarios/{id}` | **Listo** | ✔ | ✔ | ✔ |
 | Crear usuario con rol (ADMIN) | `POST /api/v1/usuarios` | **Listo** | ✔ | ✔ | ✔ |
 | Cambiar rol (ADMIN) | `PATCH /api/v1/usuarios/{id}/rol` | **Listo** | ✔ | ✔ | ✔ |
-| Catálogo de servicios (CRUD) | — | Pendiente (semana 16) | ✔ | — | — |
-| Citas con regla de horario ocupado (409) | — | Pendiente (semana 16) | ✔ | — | — |
+| Tablas de catálogo y citas | Migración `V2__crear_catalogo_y_citas.sql` | **Listo** | ✔ | ✔ | ✔ |
+| Categorías (listar, crear, renombrar, eliminar) | `/api/v1/categorias` | **Listo** | ✔ | ✔ | ✔ |
+| Catálogo de servicios (CRUD, borrado lógico) | `/api/v1/servicios` | **Listo** | ✔ | ✔ | ✔ |
+| Nutricionistas (lectura) | `GET /api/v1/nutricionistas` | **Listo** | ✔ | ✔ | ✔ |
+| Solicitar cita con regla de horario ocupado (409) | `POST /api/v1/citas` | **Listo** | ✔ | ✔ | ✔ |
+| Listar / ver citas (el paciente solo las suyas) | `GET /api/v1/citas`, `GET /api/v1/citas/{id}` | **Listo** | ✔ | ✔ | ✔ |
+| Cancelar y reprogramar cita (dueño o ADMIN) | `PATCH /api/v1/citas/{id}/cancelar`, `/reprogramar` | **Listo** | ✔ | ✔ | ✔ |
+| Cambiar estado de una cita (ADMIN) | `PATCH /api/v1/citas/{id}/estado` | **Listo** | ✔ | ✔ | ✔ |
 | Integración con el frontend React (registro e inicio de sesión) | `/api/v1/auth/*` | **Listo** | ✔ | ✔ | ✔ |
+| Integración con el frontend React (catálogo, agendar, mis solicitudes, panel admin) | `/api/v1/servicios`, `/categorias`, `/nutricionistas`, `/citas` | **Listo** | ✔ | ✔ | ✔ |
 
 > **Listo:** se probó en Swagger o Postman y el resultado quedó guardado en la base de datos. **En avance:** la ruta y su lógica están implementadas y con commits, pero falta registrar sus pruebas.
 
@@ -107,6 +114,66 @@ flowchart LR
 
 ---
 
+## 🗃️ Modelo de datos (PostgreSQL)
+
+Las tablas las crea Flyway con `V1__crear_tablas_rol_y_usuario.sql` y `V2__crear_catalogo_y_citas.sql`. Los servicios y nutricionistas iniciales son los mismos que usaba el frontend.
+
+```mermaid
+erDiagram
+    ROL ||--o{ USUARIO : "tiene"
+    USUARIO ||--o{ CITA : "solicita"
+    CATEGORIA ||--o{ SERVICIO : "agrupa"
+    SERVICIO ||--o{ CITA : "se agenda en"
+    NUTRICIONISTA ||--o{ CITA : "atiende"
+
+    ROL { int id PK
+          varchar nombre UK }
+    USUARIO { int id PK
+              varchar rut UK
+              varchar nombre
+              varchar email UK
+              varchar telefono
+              varchar password_hash
+              int rol_id FK
+              boolean activo
+              timestamp creado_en }
+    CATEGORIA { int id PK
+                varchar nombre UK }
+    SERVICIO { int id PK
+               varchar codigo UK
+               varchar nombre
+               varchar tipo
+               int categoria_id FK
+               varchar duracion
+               varchar modalidad
+               int precio
+               text descripcion
+               boolean activo }
+    NUTRICIONISTA { int id PK
+                    varchar codigo UK
+                    varchar nombre
+                    varchar especialidad
+                    varchar dias
+                    varchar horario }
+    CITA { int id PK
+           int paciente_id FK
+           int servicio_id FK
+           int nutricionista_id FK
+           varchar nombre
+           varchar rut
+           varchar email
+           varchar telefono
+           date fecha
+           time hora
+           varchar motivo
+           varchar estado
+           timestamp creado_en }
+```
+
+**Regla de horario ocupado:** un índice único parcial (`cita_horario_ocupado`) impide dos citas activas del mismo nutricionista en la misma fecha y hora; el servicio lo revisa antes y responde `409`. Una cita `Cancelada` o `Rechazada` libera el horario.
+
+---
+
 ## 🔌 Endpoints implementados
 
 Todas las rutas usan el prefijo versionado `/api/v1`. El detalle (cuerpos, ejemplos y errores) está en Swagger UI.
@@ -122,6 +189,22 @@ Todas las rutas usan el prefijo versionado `/api/v1`. El detalle (cuerpos, ejemp
 | `PUT /api/v1/usuarios/{id}` | ADMIN o el mismo usuario | `nombre`, `email`, `telefono`, `password` (opcional) | `200` | `400` · `401` · `403` · `404` · `409` correo de otra cuenta | Perfil / administración |
 | `PATCH /api/v1/usuarios/{id}/rol` | ADMIN | `rol`: `ADMIN`, `NUTRICIONISTA` o `PACIENTE` | `200` usuario con el rol nuevo | `400` rol inválido · `401` · `403` · `404` · `409` el admin intenta quitarse su propio rol | `AdminUsuarios` |
 | `DELETE /api/v1/usuarios/{id}` | ADMIN | `id` | `204` (desactivación lógica) | `401` · `403` · `404` · `409` el admin intenta desactivarse | `AdminDashboardPage` |
+| `GET /api/v1/categorias` | Público | — | `200` categorías con `totalServicios` | — | `CategoriasPage`, `AdminCategorias` |
+| `POST /api/v1/categorias` | ADMIN | `nombre` | `201` | `400` · `401` · `403` · `409` nombre repetido | `AdminCategorias` |
+| `PUT /api/v1/categorias/{id}` | ADMIN | `nombre` | `200` (los servicios quedan con el nombre nuevo) | `400` · `401` · `403` · `404` · `409` | `AdminCategorias` |
+| `DELETE /api/v1/categorias/{id}` | ADMIN | `id` | `204` | `401` · `403` · `404` · `409` tiene servicios | — |
+| `GET /api/v1/servicios` | Público | `?categoria=` (opcional) | `200` servicios activos | — | `ServiciosPage`, `HomePage`, `CategoriaDetallePage` |
+| `GET /api/v1/servicios/{id}` | Público | `id` | `200` | `404` | `DetalleServicioPage` |
+| `POST /api/v1/servicios` | ADMIN | `nombre`, `categoria`, `precio`, `tipo`, `duracion`, `modalidad`, `descripcion` | `201` con código `SV0xx` asignado por el servidor | `400` datos inválidos o categoría inexistente · `401` · `403` | `AdminServicios` |
+| `PUT /api/v1/servicios/{id}` | ADMIN | mismos campos | `200` | `400` · `401` · `403` · `404` | `AdminServicios` |
+| `DELETE /api/v1/servicios/{id}` | ADMIN | `id` | `204` (borrado lógico: las citas antiguas lo conservan) | `401` · `403` · `404` | `AdminServicios` |
+| `GET /api/v1/nutricionistas` | Público | — | `200` con días y jornada | — | `ContactoPage`, `ServiciosPage`, `AdminCriticos` |
+| `POST /api/v1/citas` | Con token (cualquier rol) | `nombre`, `rut`, `email`, `telefono`, `servicioId`, `nutricionistaCodigo`, `fecha` (AAAA-MM-DD), `hora` (HH:MM), `motivo` | `201` en estado `Pendiente` | `400` fecha pasada, hora fuera de la jornada o fuera de bloques de 30 min · `401` · `404` servicio · `409` horario tomado | `ContactoPage` |
+| `GET /api/v1/citas` | Con token | — | `200`: el PACIENTE recibe solo las suyas; ADMIN y NUTRICIONISTA, todas | `401` | `SolicitudEnCursoPage`, `AdminSolicitudes` |
+| `GET /api/v1/citas/{id}` | Dueño, ADMIN o NUTRICIONISTA | `id` | `200` | `401` · `403` cita ajena · `404` | — |
+| `PATCH /api/v1/citas/{id}/cancelar` | Dueño o ADMIN | — | `200` estado `Cancelada` (libera el horario) | `401` · `403` · `404` · `409` ya cancelada o rechazada | `SolicitudEnCursoPage` |
+| `PATCH /api/v1/citas/{id}/reprogramar` | Dueño o ADMIN | `fecha`, `hora` | `200` estado `Reprogramada` | `400` · `401` · `403` · `404` · `409` horario tomado | `SolicitudEnCursoPage` |
+| `PATCH /api/v1/citas/{id}/estado` | ADMIN | `estado`: `Pendiente`, `Confirmada`, `Reprogramada`, `Cancelada` o `Rechazada` | `200` | `400` · `401` · `403` · `404` · `409` al reactivar, el horario ya está tomado | `AdminSolicitudes` |
 
 **Ejemplo de login (datos ficticios)**
 
@@ -219,6 +302,8 @@ sequenceDiagram
 
 ## 🧪 Pruebas registradas
 
+### Usuarios, roles y JWT (21/11/2026)
+
 | # | Caso | Resultado esperado | Resultado obtenido |
 | :--- | :--- | :--- | :--- |
 | 1 | Registro con datos válidos | 201, rol `PACIENTE`, fila nueva en `usuario` con hash BCrypt |  201, rol `PACIENTE` ✔ |
@@ -240,6 +325,26 @@ sequenceDiagram
 | 17 | Usuario desactivado intenta iniciar sesión | 401 | 401 ✔ |
 
 > Pruebas 1 a 13 y 15 a 17 ejecutadas el 21/11/2026 con `pruebas/probar-api.ps1` contra PostgreSQL local (detalle en `pruebas/resultados.md`). La 10 se comprobó reiniciando el backend y la 14 desde el navegador con React (`npm run dev`).
+
+### Catálogo y citas (23/11/2026)
+
+Ejecutadas con `pruebas/probar-catalogo-citas.ps1` contra PostgreSQL local: **31 de 31 OK** (detalle en `pruebas/resultados-catalogo-citas.md`).
+
+| # | Caso | Resultado esperado | Resultado obtenido |
+| :--- | :--- | :--- | :--- |
+| C1–C3 | `GET /servicios`, `/categorias` y `/nutricionistas` sin iniciar sesión | 200 (lectura pública) | 200: 18 servicios, 4 categorías, 4 nutricionistas ✔ |
+| C4–C5 | `POST /servicios` sin token / con token de PACIENTE | 401 / 403 | 401 / 403 ✔ |
+| C6–C10 | ADMIN crea, modifica y elimina un servicio; luego se pide el eliminado | 201 (código SV0xx), 200, 204, 404 | 201 `SV019`, 200, 204, 404 ✔ |
+| C7 | Servicio con precio 0 | 400 | 400 ✔ |
+| C11–C15 | Categoría repetida, nueva, renombrar, eliminar con servicios, eliminar vacía | 409, 201, 200, 409, 204 | 409, 201, 200, 409, 204 ✔ |
+| A1 | `POST /citas` sin token | 401 | 401 ✔ |
+| A2–A3 | Paciente 1 pide una hora; paciente 2 pide la misma | 201 `Pendiente` / 409 | 201 / 409 ✔ |
+| A4–A6 | Fecha pasada, hora fuera de la jornada, hora 09:15 | 400 | 400 ✔ |
+| A7–A8 | Paciente 2 lista sus citas / ADMIN lista todas | sin la cita ajena / con todas | 0 citas / incluye la del paciente 1 ✔ |
+| A9–A10 | Paciente 2 abre o cancela la cita del paciente 1 | 403 | 403 ✔ |
+| A11–A13 | Paciente reprograma; paciente intenta cambiar el estado; ADMIN confirma | 200 `Reprogramada`, 403, 200 `Confirmada` | 200, 403, 200 ✔ |
+| A14–A16 | Paciente cancela; cancela otra vez; otro paciente toma el horario liberado | 200, 409, 201 | 200, 409, 201 ✔ |
+| Web | Desde React (`npm run dev`): agendar, horario tomado, reprogramar, cancelar, confirmar en el panel y crear un servicio que aparece en el catálogo público | Mensajes visibles y datos guardados | Solicitud #3 creada, 409 mostrado en pantalla, reprogramada, confirmada y cancelada; servicio `SV020` visible en `/servicios/20` ✔ |
 
 ---
 

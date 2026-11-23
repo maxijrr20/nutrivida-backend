@@ -146,8 +146,8 @@ public class CitaService {
             }
         }
         if (citas.horarioOcupado(nutricionista.getId(), fecha, hora, idExcluir)) {
-            throw ApiException.conflicto("Ese horario ya está tomado con " + nutricionista.getNombre()
-                    + ". Elige otra hora.");
+            throw ApiException.conflicto("Ese horario ya está tomado (" + nutricionista.getNombre()
+                    + "): elige otra hora.");
         }
     }
 
