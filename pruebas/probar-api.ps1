@@ -97,11 +97,11 @@ Registrar 6 "Login con clave incorrecta / correo inexistente" "401 con el mismo 
 
 # 7. Sin token / token alterado
 $r = Llamar GET "/auth/me"
-Registrar "7a" "GET /auth/me sin token" "401" $r ($r.estado -eq 401)
+Registrar "7a" "GET /api/v1/auth/me sin token" "401" $r ($r.estado -eq 401)
 $r = Llamar GET "/auth/me" $null ($tokP.Substring(0, $tokP.Length - 3) + "abc")
-Registrar "7b" "GET /auth/me con token alterado" "401" $r ($r.estado -eq 401)
+Registrar "7b" "GET /api/v1/auth/me con token alterado" "401" $r ($r.estado -eq 401)
 $r = Llamar GET "/auth/me" $null $tokP
-Registrar "7c" "GET /auth/me con token válido" "200" $r ($r.estado -eq 200) ", $($r.datos.email)"
+Registrar "7c" "GET /api/v1/auth/me con token válido" "200" $r ($r.estado -eq 200) ", $($r.datos.email)"
 
 # Login del ADMIN
 $r = Llamar POST "/auth/login" @{ email = $adminEmail; password = $adminPass }
@@ -111,9 +111,9 @@ if (-not $tokA) { Write-Host "`nNo se pudo iniciar sesión como ADMIN ($($r.esta
 
 # 8. Rol insuficiente
 $r = Llamar GET "/usuarios" $null $tokP
-Registrar 8 "GET /usuarios con token de PACIENTE" "403" $r ($r.estado -eq 403)
+Registrar 8 "GET /api/v1/usuarios con token de PACIENTE" "403" $r ($r.estado -eq 403)
 $r = Llamar GET "/usuarios" $null $tokA
-Registrar "8b" "GET /usuarios con token de ADMIN" "200 con la lista" $r ($r.estado -eq 200) ", $(@($r.datos).Count) usuarios"
+Registrar "8b" "GET /api/v1/usuarios con token de ADMIN" "200 con la lista" $r ($r.estado -eq 200) ", $(@($r.datos).Count) usuarios"
 
 # 9. Datos de otra persona (cambiar el id en la URL)
 $r = Llamar GET "/usuarios/$idA" $null $tokP
