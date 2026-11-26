@@ -4,22 +4,22 @@ Fecha: 2026-11-23 20:31 - API: http://localhost:8080/api/v1
 
 | # | Caso | Resultado esperado | Resultado obtenido | |
 | :--- | :--- | :--- | :--- | :---: |
-| C1 | GET /servicios sin iniciar sesión (público) | 200 con los servicios | 200, 18 servicios | OK |
-| C2 | GET /categorias (público) | 200 con total de servicios por categoría | 200, 4 categorías | OK |
-| C3 | GET /nutricionistas (público) | 200 con días y jornada | 200, 4 nutricionistas | OK |
-| C4 | POST /servicios sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
-| C5 | POST /servicios con token de PACIENTE | 403 | 403 | OK |
-| C6 | POST /servicios con token de ADMIN | 201 con código SV0xx | 201, código SV019 | OK |
-| C7 | POST /servicios con precio 0 | 400 con error por campo | 400 | OK |
-| C8 | PUT /servicios/{id} (ADMIN cambia el precio) | 200 con precio 25000 | 200 | OK |
-| C9 | DELETE /servicios/{id} (ADMIN) | 204 | 204 | OK |
+| C1 | GET /api/v1/servicios sin iniciar sesión (público) | 200 con los servicios | 200, 18 servicios | OK |
+| C2 | GET /api/v1/categorias (público) | 200 con total de servicios por categoría | 200, 4 categorías | OK |
+| C3 | GET /api/v1/nutricionistas (público) | 200 con días y jornada | 200, 4 nutricionistas | OK |
+| C4 | POST /api/v1/servicios sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
+| C5 | POST /api/v1/servicios con token de PACIENTE | 403 | 403 | OK |
+| C6 | POST /api/v1/servicios con token de ADMIN | 201 con código SV0xx | 201, código SV019 | OK |
+| C7 | POST /api/v1/servicios con precio 0 | 400 con error por campo | 400 | OK |
+| C8 | PUT /api/v1/servicios/{id} (ADMIN cambia el precio) | 200 con precio 25000 | 200 | OK |
+| C9 | DELETE /api/v1/servicios/{id} (ADMIN) | 204 | 204 | OK |
 | C10 | GET del servicio eliminado | 404 (ya no está en el catálogo) | 404 | OK |
-| C11 | POST /categorias con nombre repetido | 409 | 409 | OK |
-| C12 | POST /categorias nueva (ADMIN) | 201 | 201 | OK |
-| C13 | PUT /categorias/{id} renombrar (ADMIN) | 200 | 200 | OK |
+| C11 | POST /api/v1/categorias con nombre repetido | 409 | 409 | OK |
+| C12 | POST /api/v1/categorias nueva (ADMIN) | 201 | 201 | OK |
+| C13 | PUT /api/v1/categorias/{id} renombrar (ADMIN) | 200 | 200 | OK |
 | C14 | DELETE de una categoría con servicios | 409 | 409 | OK |
 | C15 | DELETE de una categoría vacía | 204 | 204 | OK |
-| A1 | POST /citas sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
+| A1 | POST /api/v1/citas sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
 | A2 | PACIENTE 1 solicita una cita | 201 en estado Pendiente | 201, cita #1 2028-01-30 12:30 | OK |
 | A3 | PACIENTE 2 pide el MISMO horario | 409 horario tomado | 409 | OK |
 | A4 | Cita con fecha pasada | 400 | 400 | OK |

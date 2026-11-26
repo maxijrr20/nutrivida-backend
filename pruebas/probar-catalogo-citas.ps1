@@ -70,38 +70,38 @@ $tokP1 = $pac[0].token; $tokP2 = $pac[1].token
 
 # ---------- Catálogo ----------
 $r = Llamar GET "/servicios"
-Registrar C1 "GET /servicios sin iniciar sesión (público)" "200 con los servicios" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) servicios"
+Registrar C1 "GET /api/v1/servicios sin iniciar sesión (público)" "200 con los servicios" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) servicios"
 $r = Llamar GET "/categorias"
-Registrar C2 "GET /categorias (público)" "200 con total de servicios por categoría" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) categorías"
+Registrar C2 "GET /api/v1/categorias (público)" "200 con total de servicios por categoría" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) categorías"
 $r = Llamar GET "/nutricionistas"
-Registrar C3 "GET /nutricionistas (público)" "200 con días y jornada" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) nutricionistas"
+Registrar C3 "GET /api/v1/nutricionistas (público)" "200 con días y jornada" $r ($r.estado -eq 200 -and @($r.datos).Count -ge 1) ", $(@($r.datos).Count) nutricionistas"
 
 $nuevo = @{ nombre = "Servicio de prueba $sufijo"; categoria = "Consultas"; tipo = "Consulta"; duracion = "30 min"; modalidad = "Online (video)"; precio = 22000; descripcion = "Creado por el script de pruebas." }
 $r = Llamar POST "/servicios" $nuevo
-Registrar C4 "POST /servicios sin token" "401" $r ($r.estado -eq 401)
+Registrar C4 "POST /api/v1/servicios sin token" "401" $r ($r.estado -eq 401)
 $r = Llamar POST "/servicios" $nuevo $tokP1
-Registrar C5 "POST /servicios con token de PACIENTE" "403" $r ($r.estado -eq 403)
+Registrar C5 "POST /api/v1/servicios con token de PACIENTE" "403" $r ($r.estado -eq 403)
 $r = Llamar POST "/servicios" $nuevo $tokA
-Registrar C6 "POST /servicios con token de ADMIN" "201 con código SV0xx" $r ($r.estado -eq 201 -and $r.datos.codigo -like "SV*") ", código $($r.datos.codigo)"
+Registrar C6 "POST /api/v1/servicios con token de ADMIN" "201 con código SV0xx" $r ($r.estado -eq 201 -and $r.datos.codigo -like "SV*") ", código $($r.datos.codigo)"
 $idServ = $r.datos.id
 $malo = $nuevo.Clone(); $malo.precio = 0; $malo.categoria = "No existe"
 $r = Llamar POST "/servicios" $malo $tokA
-Registrar C7 "POST /servicios con precio 0" "400 con error por campo" $r ($r.estado -eq 400)
+Registrar C7 "POST /api/v1/servicios con precio 0" "400 con error por campo" $r ($r.estado -eq 400)
 $editado = $nuevo.Clone(); $editado.precio = 25000
 $r = Llamar PUT "/servicios/$idServ" $editado $tokA
-Registrar C8 "PUT /servicios/{id} (ADMIN cambia el precio)" "200 con precio 25000" $r ($r.estado -eq 200 -and $r.datos.precio -eq 25000)
+Registrar C8 "PUT /api/v1/servicios/{id} (ADMIN cambia el precio)" "200 con precio 25000" $r ($r.estado -eq 200 -and $r.datos.precio -eq 25000)
 $r = Llamar DELETE "/servicios/$idServ" $null $tokA
-Registrar C9 "DELETE /servicios/{id} (ADMIN)" "204" $r ($r.estado -eq 204)
+Registrar C9 "DELETE /api/v1/servicios/{id} (ADMIN)" "204" $r ($r.estado -eq 204)
 $r = Llamar GET "/servicios/$idServ"
 Registrar C10 "GET del servicio eliminado" "404 (ya no está en el catálogo)" $r ($r.estado -eq 404)
 
 $r = Llamar POST "/categorias" @{ nombre = "Consultas" } $tokA
-Registrar C11 "POST /categorias con nombre repetido" "409" $r ($r.estado -eq 409)
+Registrar C11 "POST /api/v1/categorias con nombre repetido" "409" $r ($r.estado -eq 409)
 $r = Llamar POST "/categorias" @{ nombre = "Categoría prueba $sufijo" } $tokA
-Registrar C12 "POST /categorias nueva (ADMIN)" "201" $r ($r.estado -eq 201)
+Registrar C12 "POST /api/v1/categorias nueva (ADMIN)" "201" $r ($r.estado -eq 201)
 $idCat = $r.datos.id
 $r = Llamar PUT "/categorias/$idCat" @{ nombre = "Categoría renombrada $sufijo" } $tokA
-Registrar C13 "PUT /categorias/{id} renombrar (ADMIN)" "200" $r ($r.estado -eq 200 -and $r.datos.nombre -like "Categoría renombrada*")
+Registrar C13 "PUT /api/v1/categorias/{id} renombrar (ADMIN)" "200" $r ($r.estado -eq 200 -and $r.datos.nombre -like "Categoría renombrada*")
 $idConsultas = (@((Llamar GET "/categorias").datos) | Where-Object { $_.nombre -eq "Consultas" }).id
 $r = Llamar DELETE "/categorias/$idConsultas" $null $tokA
 Registrar C14 "DELETE de una categoría con servicios" "409" $r ($r.estado -eq 409)
@@ -118,7 +118,7 @@ $p1 = $pac[0].datos
 $cita = @{ nombre = $p1.nombre; rut = $p1.rut; email = $p1.email; telefono = "+56911112222"; servicioId = 1; nutricionistaCodigo = "NUT003"; fecha = $fecha; hora = $hora; motivo = "Prueba automática" }
 
 $r = Llamar POST "/citas" $cita
-Registrar A1 "POST /citas sin token" "401" $r ($r.estado -eq 401)
+Registrar A1 "POST /api/v1/citas sin token" "401" $r ($r.estado -eq 401)
 $r = Llamar POST "/citas" $cita $tokP1
 Registrar A2 "PACIENTE 1 solicita una cita" "201 en estado Pendiente" $r ($r.estado -eq 201 -and $r.datos.estado -eq "Pendiente") ", cita #$($r.datos.id) $fecha $hora"
 $idCita = $r.datos.id

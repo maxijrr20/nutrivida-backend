@@ -11,11 +11,11 @@ Fecha: 2026-11-21 00:43 - API: http://localhost:8080/api/v1
 | 4 | Registro enviando rol ADMIN | 201 con rol PACIENTE | 201, rol PACIENTE | OK |
 | 5 | Login correcto | 200 con accessToken y expiresIn | 200, expiresIn 3600 | OK |
 | 6 | Login con clave incorrecta / correo inexistente | 401 con el mismo mensaje | 401 | OK |
-| 7a | GET /auth/me sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
-| 7b | GET /auth/me con token alterado | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
-| 7c | GET /auth/me con token válido | 200 | 200, paciente1.91852@correo.cl | OK |
-| 8 | GET /usuarios con token de PACIENTE | 403 | 403 | OK |
-| 8b | GET /usuarios con token de ADMIN | 200 con la lista | 200, 3 usuarios | OK |
+| 7a | GET /api/v1/auth/me sin token | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
+| 7b | GET /api/v1/auth/me con token alterado | 401 | 401 - Debes iniciar sesión: el token falta, no es válido o está vencido. | OK |
+| 7c | GET /api/v1/auth/me con token válido | 200 | 200, paciente1.91852@correo.cl | OK |
+| 8 | GET /api/v1/usuarios con token de PACIENTE | 403 | 403 | OK |
+| 8b | GET /api/v1/usuarios con token de ADMIN | 200 con la lista | 200, 3 usuarios | OK |
 | 9 | PACIENTE consulta /usuarios/{id} de otra persona | 403 | 403 | OK |
 | 9b | PACIENTE modifica la cuenta de otra persona | 403 | 403 | OK |
 | 9c | PACIENTE modifica su propia cuenta | 200 | 200, nombre: Paciente Prueba Uno Editado | OK |

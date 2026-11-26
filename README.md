@@ -80,10 +80,10 @@ Este repositorio contiene la API REST y los servicios backend desarrollados con 
 | Nutricionistas (lectura) | `GET /api/v1/nutricionistas` | **Listo** | ✔ | ✔ | ✔ |
 | Solicitar cita con regla de horario ocupado (409) | `POST /api/v1/citas` | **Listo** | ✔ | ✔ | ✔ |
 | Listar / ver citas (el paciente solo las suyas) | `GET /api/v1/citas`, `GET /api/v1/citas/{id}` | **Listo** | ✔ | ✔ | ✔ |
-| Cancelar y reprogramar cita (dueño o ADMIN) | `PATCH /api/v1/citas/{id}/cancelar`, `/reprogramar` | **Listo** | ✔ | ✔ | ✔ |
+| Cancelar y reprogramar cita (dueño o ADMIN) | `PATCH /api/v1/citas/{id}/cancelar`, `PATCH /api/v1/citas/{id}/reprogramar` | **Listo** | ✔ | ✔ | ✔ |
 | Cambiar estado de una cita (ADMIN) | `PATCH /api/v1/citas/{id}/estado` | **Listo** | ✔ | ✔ | ✔ |
 | Integración con el frontend React (registro e inicio de sesión) | `/api/v1/auth/*` | **Listo** | ✔ | ✔ | ✔ |
-| Integración con el frontend React (catálogo, agendar, mis solicitudes, panel admin) | `/api/v1/servicios`, `/categorias`, `/nutricionistas`, `/citas` | **Listo** | ✔ | ✔ | ✔ |
+| Integración con el frontend React (catálogo, agendar, mis solicitudes, panel admin) | `/api/v1/servicios`, `/api/v1/categorias`, `/api/v1/nutricionistas`, `/api/v1/citas` | **Listo** | ✔ | ✔ | ✔ |
 
 > **Listo:** se probó en Swagger o Postman y el resultado quedó guardado en la base de datos. **En avance:** la ruta y su lógica están implementadas y con commits, pero falta registrar sus pruebas.
 
@@ -259,7 +259,7 @@ Para probar una ruta protegida: ejecutar `POST /api/v1/auth/login`, copiar el `a
 | Token en el frontend | Pendiente de implementar en React. Se evaluará `sessionStorage` o `localStorage` para mantener la sesión al recargar (IE3.3.2), con su riesgo ante XSS. |
 | CORS | Solo `http://localhost:5173` y `https://maxijrr20.github.io` (`CORS_ORIGENES`). CORS no reemplaza la autorización. |
 
-**Roles y permisos (usuarios):** el registro público siempre asigna `PACIENTE`; solo el `ADMIN` puede crear usuarios con otro rol (`POST /usuarios`) o cambiar el rol de una cuenta (`PATCH /usuarios/{id}/rol`). Listar y desactivar son solo para `ADMIN` (`@PreAuthorize`, 403 para otros roles). Ver y modificar una cuenta lo pueden hacer el `ADMIN` o el mismo usuario: el id se compara con el `sub` del token, así que cambiar el id en la URL responde 403. El primer administrador se crea al iniciar con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
+**Roles y permisos (usuarios):** el registro público siempre asigna `PACIENTE`; solo el `ADMIN` puede crear usuarios con otro rol (`POST /api/v1/usuarios`) o cambiar el rol de una cuenta (`PATCH /api/v1/usuarios/{id}/rol`). Listar y desactivar son solo para `ADMIN` (`@PreAuthorize`, 403 para otros roles). Ver y modificar una cuenta lo pueden hacer el `ADMIN` o el mismo usuario: el id se compara con el `sub` del token, así que cambiar el id en la URL responde 403. El primer administrador se crea al iniciar con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
 
 ### Diagrama de secuencia: login y ruta protegida
 
@@ -312,15 +312,15 @@ sequenceDiagram
 | 4 | Registro enviando `"rol": "ADMIN"` | 201 con rol `PACIENTE` (el servidor ignora el rol) |  201 con rol `PACIENTE` ✔ |
 | 5 | Login correcto | 200 con `accessToken`, `tokenType` y `expiresIn` |  200, `expiresIn` 3600 ✔ |
 | 6 | Login con clave incorrecta o correo inexistente | 401 con el mismo mensaje genérico |  401 con el mismo mensaje en ambos casos ✔ |
-| 7 | `GET /auth/me` sin token / con token alterado | 401 |  401 sin token y 401 con token alterado ✔ |
-| 8 | `GET /usuarios` con token de PACIENTE | 403 |  403 (con token de ADMIN: 200 con la lista) ✔ |
-| 9 | PACIENTE consulta `GET /usuarios/{id}` de otra persona | 403 |  403 al ver y 403 al modificar otra cuenta; 200 al modificar la propia ✔ |
+| 7 | `GET /api/v1/auth/me` sin token / con token alterado | 401 |  401 sin token y 401 con token alterado ✔ |
+| 8 | `GET /api/v1/usuarios` con token de PACIENTE | 403 |  403 (con token de ADMIN: 200 con la lista) ✔ |
+| 9 | PACIENTE consulta `GET /api/v1/usuarios/{id}` de otra persona | 403 |  403 al ver y 403 al modificar otra cuenta; 200 al modificar la propia ✔ |
 | 10 | Reiniciar el backend y volver a iniciar sesión | Los usuarios siguen en la base de datos | Tras reiniciar, el ADMIN no se vuelve a crear (ya existe) y los usuarios de prueba siguen en PostgreSQL ✔ |
 | 11 | ADMIN cambia el rol de un paciente a `NUTRICIONISTA` | 200 y el rol queda guardado |  200, rol `NUTRICIONISTA` ✔ |
-| 12 | PACIENTE intenta `PATCH /usuarios/{id}/rol` | 403 |  403 ✔ |
+| 12 | PACIENTE intenta `PATCH /api/v1/usuarios/{id}/rol` | 403 |  403 ✔ |
 | 13 | ADMIN intenta quitarse su propio rol | 409 |  409 ✔ |
 | 14 | Frontend: registro e inicio de sesión llaman a la API (carga, éxito y error) | Mensajes visibles en pantalla | Registro exitoso, "Correo o contraseña incorrectos." con clave mala, login de PACIENTE y de ADMIN (redirige a `/admin`), sesión con token tras recargar y se borra al cerrar sesión ✔ |
-| 15 | ADMIN crea un usuario `NUTRICIONISTA` (`POST /usuarios`) | 201 con el rol elegido | 201 ✔ |
+| 15 | ADMIN crea un usuario `NUTRICIONISTA` (`POST /api/v1/usuarios`) | 201 con el rol elegido | 201 ✔ |
 | 16 | ADMIN desactiva un usuario | 204 | 204 ✔ |
 | 17 | Usuario desactivado intenta iniciar sesión | 401 | 401 ✔ |
 
@@ -332,19 +332,19 @@ Ejecutadas con `pruebas/probar-catalogo-citas.ps1` contra PostgreSQL local: **31
 
 | # | Caso | Resultado esperado | Resultado obtenido |
 | :--- | :--- | :--- | :--- |
-| C1–C3 | `GET /servicios`, `/categorias` y `/nutricionistas` sin iniciar sesión | 200 (lectura pública) | 200: 18 servicios, 4 categorías, 4 nutricionistas ✔ |
-| C4–C5 | `POST /servicios` sin token / con token de PACIENTE | 401 / 403 | 401 / 403 ✔ |
+| C1–C3 | `GET /api/v1/servicios`, `/api/v1/categorias` y `/api/v1/nutricionistas` sin iniciar sesión | 200 (lectura pública) | 200: 18 servicios, 4 categorías, 4 nutricionistas ✔ |
+| C4–C5 | `POST /api/v1/servicios` sin token / con token de PACIENTE | 401 / 403 | 401 / 403 ✔ |
 | C6–C10 | ADMIN crea, modifica y elimina un servicio; luego se pide el eliminado | 201 (código SV0xx), 200, 204, 404 | 201 `SV019`, 200, 204, 404 ✔ |
 | C7 | Servicio con precio 0 | 400 | 400 ✔ |
 | C11–C15 | Categoría repetida, nueva, renombrar, eliminar con servicios, eliminar vacía | 409, 201, 200, 409, 204 | 409, 201, 200, 409, 204 ✔ |
-| A1 | `POST /citas` sin token | 401 | 401 ✔ |
+| A1 | `POST /api/v1/citas` sin token | 401 | 401 ✔ |
 | A2–A3 | Paciente 1 pide una hora; paciente 2 pide la misma | 201 `Pendiente` / 409 | 201 / 409 ✔ |
 | A4–A6 | Fecha pasada, hora fuera de la jornada, hora 09:15 | 400 | 400 ✔ |
 | A7–A8 | Paciente 2 lista sus citas / ADMIN lista todas | sin la cita ajena / con todas | 0 citas / incluye la del paciente 1 ✔ |
 | A9–A10 | Paciente 2 abre o cancela la cita del paciente 1 | 403 | 403 ✔ |
 | A11–A13 | Paciente reprograma; paciente intenta cambiar el estado; ADMIN confirma | 200 `Reprogramada`, 403, 200 `Confirmada` | 200, 403, 200 ✔ |
 | A14–A16 | Paciente cancela; cancela otra vez; otro paciente toma el horario liberado | 200, 409, 201 | 200, 409, 201 ✔ |
-| Web | Desde React (`npm run dev`): agendar, horario tomado, reprogramar, cancelar, confirmar en el panel y crear un servicio que aparece en el catálogo público | Mensajes visibles y datos guardados | Solicitud #3 creada, 409 mostrado en pantalla, reprogramada, confirmada y cancelada; servicio `SV020` visible en `/servicios/20` ✔ |
+| Web | Desde React (`npm run dev`): agendar, horario tomado, reprogramar, cancelar, confirmar en el panel y crear un servicio que aparece en el catálogo público | Mensajes visibles y datos guardados | Solicitud #3 creada, 409 mostrado en pantalla, reprogramada, confirmada y cancelada; servicio `SV020` visible en `/api/v1/servicios/20` ✔ |
 
 ---
 
